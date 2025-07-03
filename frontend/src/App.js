@@ -1,5 +1,5 @@
 import React from 'react';
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -15,17 +15,29 @@ import Analytics from './pages/Analytics';
 import Leaderboard from './pages/Leaderboard';
 
 // Context
-import { AuthProvider } from './context/AuthContext';
+import { AuthProvider, useAuth } from './context/AuthContext';
+
+function RequireAuth({ children }) {
+  const { user, restoring } = useAuth();
+  const location = useLocation();
+  if (restoring) {
+    return null; // Or a spinner/loading indicator
+  }
+  if (!user) {
+    return <Navigate to="/login" state={{ from: location }} replace />;
+  }
+  return children;
+}
 
 function App() {
   return (
     <Router>
       <AuthProvider>
-                  <div className="min-h-screen bg-gradient-to-br from-muted via-secondary to-calm/30">
+        <div className="min-h-screen bg-gradient-to-br from-muted via-secondary to-calm/30">
           <AnimatePresence mode="wait">
             <Routes>
               <Route path="/login" element={<Login />} />
-              <Route path="/" element={<Layout />}>
+              <Route path="/" element={<RequireAuth><Layout /></RequireAuth>}>
                 <Route index element={<Dashboard />} />
                 <Route path="checkin" element={<CheckIn />} />
                 <Route path="meditation" element={<Meditation />} />

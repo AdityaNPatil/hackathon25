@@ -85,11 +85,11 @@ const Dashboard = () => {
   };
 
   // Helper to show demo numbers if user has zero stats
-  const demoStats = {
-    total_points: user?.total_points && user.total_points > 0 ? user.total_points : 120,
-    checkins: user?.checkins && user.checkins > 0 ? user.checkins : 8,
-    meditations: user?.meditations && user.meditations > 0 ? user.meditations : 5,
-    breaks: user?.breaks && user.breaks > 0 ? user.breaks : 12,
+  const stats = {
+    total_points: typeof user?.total_points === 'number' ? user.total_points : 120,
+    checkins: typeof user?.checkins === 'number' ? user.checkins : 8,
+    meditations: typeof user?.meditations === 'number' ? user.meditations : 5,
+    breaks: typeof user?.breaks === 'number' ? user.breaks : 12,
   };
 
   return (
@@ -125,7 +125,7 @@ const Dashboard = () => {
         </div>
         <div className="text-center flex-1">
           <h2 className="text-xl font-display font-semibold text-neutral-900 mb-1">Your Contribution</h2>
-          <div className="text-3xl font-bold text-accent mb-1">{demoStats.total_points}</div>
+          <div className="text-3xl font-bold text-accent mb-1">{stats.total_points}</div>
           <div className="text-sm text-neutral-500">Your personal points</div>
         </div>
       </motion.div>
@@ -141,10 +141,10 @@ const Dashboard = () => {
       {/* Stats Overview */}
       <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         {[
-          { label: 'Total Points', value: demoStats.total_points, icon: Target, color: 'text-trophy' },
-          { label: 'Check-ins', value: demoStats.checkins, icon: Heart, color: 'text-heart' },
-          { label: 'Meditations', value: demoStats.meditations, icon: Coffee, color: 'text-meditation' },
-          { label: 'Breaks Taken', value: demoStats.breaks, icon: Activity, color: 'text-activity' },
+          { label: 'Total Points', value: stats.total_points, icon: Target, color: 'text-trophy' },
+          { label: 'Check-ins', value: stats.checkins, icon: Heart, color: 'text-heart' },
+          { label: 'Meditations', value: stats.meditations, icon: Coffee, color: 'text-meditation' },
+          { label: 'Breaks Taken', value: stats.breaks, icon: Activity, color: 'text-activity' },
         ].map((stat, index) => (
           <motion.div key={stat.label} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 + index * 0.1 }} className="wellness-card text-center">
             <stat.icon className={`w-8 h-8 mx-auto mb-3 ${stat.color}`} />

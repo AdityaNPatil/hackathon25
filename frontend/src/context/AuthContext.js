@@ -18,6 +18,7 @@ export const AuthProvider = ({ children }) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [leaderboard, setLeaderboard] = useState([]);
+  const [restoring, setRestoring] = useState(true);
 
   // Try to restore user from localStorage on mount
   useEffect(() => {
@@ -25,6 +26,7 @@ export const AuthProvider = ({ children }) => {
     if (savedUser) {
       setUser(JSON.parse(savedUser));
     }
+    setRestoring(false);
   }, []);
 
   // Fetch leaderboard on mount and when user changes
@@ -401,6 +403,7 @@ export const AuthProvider = ({ children }) => {
     getAIInsights,
     getMeditationGuide,
     fetchLeaderboard,
+    restoring,
   };
 
   return (

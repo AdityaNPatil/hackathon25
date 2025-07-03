@@ -143,10 +143,12 @@ Please provide a supportive response that:
     
     def get_meditation_guidance(self, session_type: str) -> str:
         """Get personalized meditation guidance"""
-        
-        system_prompt = """You are Wellness Buddy providing meditation and mindfulness guidance. Offer practical, step-by-step instructions for different types of meditation and relaxation techniques."""
-
-        user_prompt = f"""
+        if session_type.lower() == 'relaxation':
+            system_prompt = """You are Wellness Buddy, an expert in relaxation and stress relief. Please provide 3-5 unique relaxation techniques, each as a separate bullet point or numbered item. Keep each technique under 30 words. Format as a list for easy parsing."""
+            user_prompt = "Generate 3-5 unique relaxation techniques for stress relief."
+        else:
+            system_prompt = """You are Wellness Buddy providing meditation and mindfulness guidance. Offer practical, step-by-step instructions for different types of meditation and relaxation techniques."""
+            user_prompt = f"""
 Session Type: {session_type}
 
 Please provide:
@@ -156,7 +158,6 @@ Please provide:
 4. Keep it practical and easy to follow
 5. Limit to 150 words
 """
-
         try:
             payload = {
                 "model": "deepseek-chat",
@@ -167,20 +168,16 @@ Please provide:
                 "max_tokens": 250,
                 "temperature": 0.7
             }
-            
             response = requests.post(
                 self.api_url,
                 headers=self.headers,
                 json=payload,
-                
             )
-            
             if response.status_code == 200:
                 result = response.json()
                 return result['choices'][0]['message']['content'].strip()
             else:
                 return self._get_meditation_fallback_response(session_type)
-                
         except Exception as e:
             print(f"Error calling DeepSeek API for meditation guidance: {e}")
             return self._get_meditation_fallback_response(session_type)
@@ -298,4 +295,41 @@ I'm equipped with evidence-based techniques for stress, anxiety, workplace chall
             "Relaxation techniques": "Progressive muscle relaxation: tense and release each muscle group from toes to head. Or try visualization - imagine a peaceful place and immerse yourself in that feeling."
         }
         
-        return meditation_responses.get(session_type, "Find a quiet space, sit comfortably, and focus on your breath. Start with just 2-3 minutes and gradually increase. Every moment of mindfulness counts!") 
+        return meditation_responses.get(session_type, "Find a quiet space, sit comfortably, and focus on your breath. Start with just 2-3 minutes and gradually increase. Every moment of mindfulness counts!")
+
+    def get_mindfulness_quotes(self) -> str:
+        """Get a set of unique, inspiring mindfulness quotes (as a string with bullet points or numbers)"""
+        system_prompt = """You are Wellness Buddy, an expert in mindfulness and meditation. Please provide 5 unique, inspiring mindfulness quotes or reflections, each as a separate bullet point or numbered item. Keep each quote under 40 words. Format as a list for easy parsing."""
+        user_prompt = "Generate 5 unique mindfulness quotes or reflections for daily inspiration."
+        try:
+            payload = {
+                "model": "deepseek-chat",
+                "messages": [
+                    {"role": "system", "content": system_prompt},
+                    {"role": "user", "content": user_prompt}
+                ],
+                "max_tokens": 300,
+                "temperature": 0.8
+            }
+            response = requests.post(
+                self.api_url,
+                headers=self.headers,
+                json=payload
+            )
+            if response.status_code == 200:
+                result = response.json()
+                return result['choices'][0]['message']['content'].strip()
+            else:
+                return self._get_mindfulness_quotes_fallback()
+        except Exception as e:
+            print(f"Error calling DeepSeek API for mindfulness quotes: {e}")
+            return self._get_mindfulness_quotes_fallback()
+
+    def _get_mindfulness_quotes_fallback(self) -> str:
+        return """
+1. In the stillness of the present moment, we discover peace.
+2. Mindfulness is allowing yourself to be exactly where you are.
+3. The present moment is a place of profound healing.
+4. Deep peace comes from learning to surf the waves of life.
+5. Let go of what you think life should be, and open to what is.
+""" 

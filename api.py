@@ -7,6 +7,7 @@ from datetime import datetime
 from database import WellnessDatabase
 from deepseek_api import DeepSeekAPI
 import config
+import json
 
 # Setup logging
 logging.basicConfig(level=logging.INFO)
@@ -80,15 +81,15 @@ async def login(data: UserLogin):
     """Login or register a user"""
     try:
         logger.info(f"Login attempt for user: {data.username}")
-        user_id = db.add_user(data.username, data.email)
+        user_id = db.add_user(data.username, data.email or "")
         user_stats = db.get_user_stats(user_id)
-        
+        user_info = db.get_user(user_id)
         response = {
             "user_id": user_id,
             "username": data.username,
+            "email": user_info.get('email', ''),
             **user_stats
         }
-        
         logger.info(f"Login successful for user: {data.username} (ID: {user_id})")
         return response
     except Exception as e:
@@ -103,14 +104,14 @@ async def checkin(data: CheckInRequest, background_tasks: BackgroundTasks):
         logger.info(f"Check-in request from user {data.user_id}: {data.mood}")
         
         # Add check-in to database
-        success = db.add_wellness_checkin(data.user_id, data.mood, data.notes)
+        success = db.add_wellness_checkin(data.user_id, data.mood, data.notes or "")
         if not success:
             raise HTTPException(status_code=400, detail="Check-in failed")
         
         # Get AI mood analysis
         ai_response = ""
         try:
-            ai_response = deepseek_api.get_mood_analysis(data.mood, data.notes)
+            ai_response = deepseek_api.get_mood_analysis(data.mood, data.notes or "")
             logger.info(f"AI mood analysis generated for user {data.user_id}")
         except Exception as e:
             logger.warning(f"AI mood analysis failed: {str(e)}")
@@ -176,18 +177,51 @@ async def meditation(data: MeditationRequest, background_tasks: BackgroundTasks)
         logger.info(f"Meditation request from user {data.user_id}: {data.session_type} ({data.duration} min)")
         
         # Add meditation session to database
-        success = db.add_meditation_session(data.user_id, data.session_type, data.duration)
+        success = db.add_meditation_session(data.user_id, data.session_type, data.duration if data.duration is not None else 5)
         if not success:
             raise HTTPException(status_code=400, detail="Meditation session failed")
         
         # Get AI meditation guidance
         ai_response = ""
         try:
-            ai_response = deepseek_api.get_meditation_guidance(data.session_type)
+            ai_guidance = deepseek_api.get_meditation_guidance(data.session_type)
+            # For Mindfulness and Relaxation, try to parse as list
+            if data.session_type.lower() == 'mindfulness':
+                # Try to extract bullet points or steps as a list
+                import re
+                steps = re.findall(r"(?:\d+\.|\-|•)\s*(.+)", ai_guidance)
+                if steps:
+                    ai_response = json.dumps(steps)
+                else:
+                    ai_response = json.dumps([ai_guidance])
+            elif data.session_type.lower() == 'relaxation':
+                # Try to extract techniques as a list
+                import re
+                techniques = re.findall(r"(?:\d+\.|\-|•)\s*(.+)", ai_guidance)
+                if techniques:
+                    ai_response = json.dumps(techniques)
+                else:
+                    ai_response = json.dumps([ai_guidance])
+            else:
+                ai_response = ai_guidance
             logger.info(f"AI meditation guidance generated for user {data.user_id}")
         except Exception as e:
             logger.warning(f"AI meditation guidance failed: {str(e)}")
-            ai_response = get_fallback_meditation_response(data.session_type)
+            # Fallbacks as lists for Mindfulness/Relaxation, string for Guided Breathing
+            if data.session_type.lower() == 'mindfulness':
+                ai_response = json.dumps([
+                    "Notice 5 things you can see, 4 you can touch, 3 you can hear, 2 you can smell, and 1 you can taste.",
+                    "Focus on your breath and gently return your attention when your mind wanders.",
+                    "Accept your thoughts and feelings without judgment."
+                ])
+            elif data.session_type.lower() == 'relaxation':
+                ai_response = json.dumps([
+                    "Progressive muscle relaxation: tense and release each muscle group from toes to head.",
+                    "Visualization: imagine a peaceful place and immerse yourself in that feeling.",
+                    "Box breathing: inhale for 4, hold for 4, exhale for 4, hold for 4."
+                ])
+            else:
+                ai_response = "Find a comfortable position. Close your eyes and take slow, deep breaths. Inhale for 4 counts, hold for 4, exhale for 4. Focus on your breath and let thoughts pass by like clouds."
         
         # Get updated user stats
         user_stats = db.get_user_stats(data.user_id)
@@ -265,13 +299,12 @@ async def get_user(user_id: int):
     try:
         user_stats = db.get_user_stats(user_id)
         user_info = db.get_user(user_id)
-        
         if not user_info:
             raise HTTPException(status_code=404, detail="User not found")
-        
         return {
             "user_id": user_id,
             "username": user_info.get('username', 'Unknown'),
+            "email": user_info.get('email', ''),
             **user_stats
         }
     except HTTPException:
@@ -298,11 +331,8 @@ async def get_analytics(user_id: int):
     """Get user analytics data"""
     try:
         stats = db.get_user_stats(user_id)
-        mood_stats = db.get_mood_stats(user_id) if hasattr(db, 'get_mood_stats') else {}
-        
         return {
             "user_stats": stats,
-            "mood_distribution": mood_stats,
             "daily_activity": [],  # Could be enhanced with time-series data
             "achievements": []  # Could be enhanced with achievement system
         }
@@ -402,6 +432,34 @@ def generate_basic_insights(user_stats: Dict) -> str:
         return f"Your {checkins} check-ins show good self-awareness. Consider adding more meditation sessions for balance."
     else:
         return "You're starting your wellness journey! Try to check in daily and take regular breaks for the best results."
+
+@app.post("/api/mindfulness_quotes")
+async def mindfulness_quotes(data: MeditationRequest):
+    """Get AI-generated mindfulness quotes (as a list) for Mindfulness session"""
+    try:
+        logger.info(f"Mindfulness quotes request for user {data.user_id}")
+        try:
+            ai_guidance = deepseek_api.get_mindfulness_quotes()
+            # Try to extract bullet points or steps as a list
+            import re
+            quotes = re.findall(r"(?:\d+\.|\-|•)\s*(.+)", ai_guidance)
+            if quotes:
+                ai_response = quotes
+            else:
+                ai_response = [ai_guidance]
+        except Exception as e:
+            logger.warning(f"AI mindfulness quotes failed: {str(e)}")
+            ai_response = [
+                "In the stillness of the present moment, we discover that much of our suffering arises not from what is, but from our resistance to it.",
+                "Mindfulness is not about getting anywhere else. It's about allowing ourselves to be exactly where we are, completely.",
+                "The present moment is a place of profound healing, not because it fixes our problems, but because it shows us that beneath the noise of fear, worry, and regret lies an untouched stillness, waiting patiently for us to return home to ourselves.",
+                "We spend so much time trying to fix the external world, forgetting that the deepest peace comes not from changing the waves, but from learning to surf them with awareness, grace, and trust in the rhythm of life.",
+                "When you let go of what you think your life is supposed to look like and gently open to what is, you meet a profound serenity — one that doesn't depend on outcomes but blossoms from acceptance, patience, and the courage to be present."
+            ]
+        return {"ai_response": ai_response}
+    except Exception as e:
+        logger.error(f"Mindfulness quotes error: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Failed to fetch mindfulness quotes: {str(e)}")
 
 if __name__ == "__main__":
     import uvicorn

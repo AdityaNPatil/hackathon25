@@ -2,20 +2,24 @@ import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Heart, Sparkles, Sun, Moon, Cloud } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import { useNavigate } from 'react-router-dom';
 
 const Login = () => {
   const [username, setUsername] = useState('');
   const [email, setEmail] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const { login } = useAuth();
+  const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!username.trim()) return;
-
     setIsLoading(true);
-    await login(username, email);
+    const success = await login(username, email);
     setIsLoading(false);
+    if (success) {
+      navigate('/');
+    }
   };
 
   return (

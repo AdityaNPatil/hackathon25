@@ -38,9 +38,6 @@ const Layout = () => {
     logout();
   };
 
-  // Show demo points if user has zero
-  const demoPoints = user?.points && user.points > 0 ? user.points : 120;
-
   return (
     <div className="w-full h-screen flex bg-gradient-to-br from-muted via-secondary to-calm/30">
       {/* Sidebar */}
@@ -73,12 +70,12 @@ const Layout = () => {
           <div className={`${sidebarCollapsed ? 'p-3' : 'p-6'} border-b border-neutral-100`}>
             <div className={`flex items-center ${sidebarCollapsed ? 'justify-center' : 'space-x-3'}`}>
               <div className={`${sidebarCollapsed ? 'w-10 h-10 text-lg' : 'w-12 h-12 text-2xl'} bg-gradient-to-tr from-accent to-calm rounded-full flex items-center justify-center text-white font-bold`}>
-                K
+                {user?.username?.charAt(0).toUpperCase() || 'U'}
               </div>
               {!sidebarCollapsed && (
                 <div className="flex-1">
-                  <h3 className="font-medium text-neutral-900">{user?.username}</h3>
-                  <p className="text-sm text-neutral-500">kanha930@gmail.com</p>
+                  <h3 className="font-medium text-neutral-900">{user?.username || 'User'}</h3>
+                  <p className="text-sm text-neutral-500">{user?.email || 'your@email.com'}</p>
                 </div>
               )}
             </div>
@@ -86,7 +83,7 @@ const Layout = () => {
               <div className="mt-4 p-3 bg-secondary rounded-xl">
                 <div className="flex justify-between items-center">
                   <span className="text-sm text-neutral-600">Total Points</span>
-                  <span className="font-semibold text-primary">{demoPoints}</span>
+                  <span className="font-semibold text-primary">{typeof user?.total_points === 'number' ? user.total_points : 120}</span>
                 </div>
               </div>
             )}
@@ -152,7 +149,7 @@ const Layout = () => {
               </div>
               <div className="flex items-center space-x-2 px-3 py-1 bg-secondary rounded-full">
                 <Heart className="w-4 h-4 text-heart" />
-                <span className="text-sm font-medium text-primary">{demoPoints} pts</span>
+                <span className="text-sm font-medium text-primary">{typeof user?.total_points === 'number' ? user.total_points : 120} pts</span>
               </div>
             </div>
           </div>

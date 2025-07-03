@@ -50,7 +50,7 @@ const BreathingAnimation = ({ duration, onEnd }) => {
         transition={{ duration: 4, ease: 'easeInOut' }}
         className="w-40 h-40 rounded-full bg-gradient-to-tr from-calm-300 to-meditation-400 flex items-center justify-center shadow-lg"
       >
-        <span className="text-2xl text-white font-bold">
+        <span className="text-2xl text-calm font-bold">
           {phase === 'inhale' ? 'Inhale...' : 'Exhale...'}
         </span>
       </motion.div>
@@ -81,7 +81,8 @@ const MindfulnessQuotes = ({ duration, quotes, onEnd }) => {
 
   useEffect(() => {
     // Shuffle and pick quotes on mount/start
-    const shuffled = shuffleArray(quotes).slice(0, maxQuotes);
+    const cleanedQuotes = quotes.map(q => q.replace(/^\*+|\*+$/g, '').trim());
+    const shuffled = shuffleArray(cleanedQuotes).slice(0, maxQuotes);
     setDisplayQuotes(shuffled);
     setQuoteIndex(0);
     setElapsed(0);
@@ -132,9 +133,9 @@ const MindfulnessQuotes = ({ duration, quotes, onEnd }) => {
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0, y: -20 }}
           transition={{ duration: 0.5 }}
-          className="text-2xl font-semibold text-calm text-center"
+          className="text-2xl font-semibold text-calm text-center bg-white rounded-xl shadow-lg p-6 border border-calm-200 mb-4"
         >
-          "{displayQuotes[quoteIndex]}"
+          {displayQuotes[quoteIndex]}
         </motion.div>
       </AnimatePresence>
       <button
@@ -236,6 +237,7 @@ const Meditation = () => {
   const [aiResponse, setAiResponse] = useState('');
   const [mindfulnessQuotes, setMindfulnessQuotes] = useState(mindfulnessQuotesFallback);
   const [relaxationTechniques, setRelaxationTechniques] = useState(relaxationTechniquesFallback);
+  const [error, setError] = useState(null);
 
   const sessionTypes = [
     { id: 'Guided Breathing', label: 'Guided Breathing', icon: Heart, color: 'bg-gradient-to-tr from-calm to-focus' },
@@ -247,6 +249,32 @@ const Meditation = () => {
     setIsActive(true);
     setSessionComplete(false);
     setAiResponse('');
+    setError(null);
+    // For Mindfulness, fetch quotes from backend
+    if (selectedType?.id === 'Mindfulness') {
+      try {
+        const res = await fetch('http://localhost:6081/api/mindfulness_quotes', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ user_id: user?.user_id || 1, session_type: 'Mindfulness', duration })
+        });
+        if (!res.ok) throw new Error('Failed to fetch mindfulness quotes');
+        const data = await res.json();
+        if (Array.isArray(data.ai_response)) {
+          setMindfulnessQuotes(data.ai_response);
+        } else if (typeof data.ai_response === 'string') {
+          // Try to parse as bullet points/numbered list
+          const lines = data.ai_response.split(/\n|\r/).map(l => l.trim()).filter(Boolean);
+          const quotes = lines.map(l => l.replace(/^\d+\.|^-|•/, '').trim()).filter(Boolean);
+          setMindfulnessQuotes(quotes.length > 0 ? quotes : mindfulnessQuotesFallback);
+        } else {
+          setMindfulnessQuotes(mindfulnessQuotesFallback);
+        }
+      } catch (e) {
+        setError('Could not load mindfulness quotes. Showing fallback.');
+        setMindfulnessQuotes(mindfulnessQuotesFallback);
+      }
+    }
   };
 
   const handleEnd = async () => {
@@ -256,38 +284,24 @@ const Meditation = () => {
     const data = await meditate(selectedType.label, duration);
     if (selectedType.id === 'Guided Breathing') {
       setAiResponse(data?.ai_response || 'Great job! Deep breathing calms the mind and body.');
-    } else if (selectedType.id === 'Mindfulness') {
-      // Try to get quotes from backend if available (ai_response as JSON array or fallback)
-      if (data && data.ai_response) {
-        try {
-          const backendQuotes = JSON.parse(data.ai_response);
-          if (Array.isArray(backendQuotes) && backendQuotes.length > 0) {
-            setMindfulnessQuotes(backendQuotes);
-            setAiResponse('Mindfulness helps you stay present. Well done!');
-            return;
-          }
-        } catch {
-          // Not a JSON array, fallback
-        }
-      }
-      setMindfulnessQuotes(mindfulnessQuotesFallback);
-      setAiResponse('Mindfulness helps you stay present. Well done!');
     } else if (selectedType.id === 'Relaxation') {
-      // Try to get techniques from backend if available (ai_response as JSON array or fallback)
+      // Always use backend ai_response for relaxation techniques
       if (data && data.ai_response) {
         try {
           const backendTechniques = JSON.parse(data.ai_response);
           if (Array.isArray(backendTechniques) && backendTechniques.length > 0) {
-            setRelaxationTechniques(backendTechniques);
+            setRelaxationTechniques(backendTechniques.map(t => t.replace(/^\*+|\*+$/g, '').trim()));
             setAiResponse('Relaxation is key to wellness. Keep it up!');
             return;
           }
-        } catch {
-          // Not a JSON array, fallback
+        } catch (e) {
+          // Parsing failed, fallback
         }
       }
       setRelaxationTechniques(relaxationTechniquesFallback);
       setAiResponse('Relaxation is key to wellness. Keep it up!');
+    } else if (selectedType.id === 'Mindfulness') {
+      setAiResponse('Mindfulness helps you stay present. Well done!');
     }
   };
 
@@ -391,7 +405,7 @@ const Meditation = () => {
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="wellness-card bg-secondary border-calm text-center">
           <CheckCircle className="w-10 h-10 text-calm mx-auto mb-2" />
           <h3 className="text-xl font-semibold text-neutral-900 mb-2">Session Complete!</h3>
-          <p className="text-neutral-700 mb-2">{aiResponse}</p>
+          {/* <p className="text-neutral-700 mb-2">{aiResponse}</p> */}
           <button onClick={() => setSessionComplete(false)} className="wellness-button-primary mt-2">Start Another Session</button>
         </motion.div>
       )}
