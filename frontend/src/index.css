@@ -1,0 +1,119 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  * {
+    @apply border-neutral-200;
+  }
+  
+  body {
+    @apply bg-gradient-to-br from-muted via-secondary to-calm/30 text-neutral-900 font-sans;
+    font-feature-settings: "rlig" 1, "calt" 1;
+    background-attachment: fixed;
+  }
+  
+  html {
+    scroll-behavior: smooth;
+  }
+}
+
+@layer components {
+  .wellness-card {
+    @apply bg-white/95 rounded-3xl shadow-xl border border-neutral-200 p-8 transition-all duration-300 hover:shadow-2xl hover:scale-[1.025] backdrop-blur-md;
+  }
+  
+  .wellness-button {
+    @apply px-7 py-3 rounded-2xl font-semibold transition-all duration-300 transform shadow-md hover:scale-105 active:scale-95 focus:outline-none focus:ring-2 focus:ring-primary;
+  }
+  
+  .wellness-button-primary {
+    @apply wellness-button bg-gradient-to-tr from-primary to-focus text-white shadow-lg hover:shadow-2xl hover:from-focus hover:to-primary;
+  }
+  
+  .wellness-button-secondary {
+    @apply wellness-button bg-white text-primary border-2 border-primary hover:border-focus hover:bg-primary hover:text-white;
+  }
+  
+  .wellness-input {
+    @apply w-full px-5 py-3 rounded-2xl border-2 border-neutral-200 focus:border-primary focus:ring-2 focus:ring-primary transition-all duration-300 bg-white/80 shadow-inner placeholder:text-neutral-400;
+  }
+  
+  .wellness-gradient-text {
+    @apply bg-gradient-to-tr from-primary to-focus bg-clip-text text-transparent;
+  }
+  
+  .breathing-animation {
+    animation: breathing 4s ease-in-out infinite;
+  }
+  
+  .floating-animation {
+    animation: float 6s ease-in-out infinite;
+  }
+  
+  .glass-effect {
+    @apply backdrop-blur-lg bg-white/70 border border-white/30 shadow-lg;
+  }
+  
+  .mood-happy {
+    @apply bg-gradient-to-tr from-calm to-primary;
+  }
+  
+  .mood-neutral {
+    @apply bg-gradient-to-tr from-energy to-energy;
+  }
+  
+  .mood-stressed {
+    @apply bg-gradient-to-tr from-calm to-calm;
+  }
+}
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+  
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+/* Custom scrollbar for webkit browsers */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  @apply bg-calm rounded-full;
+}
+
+::-webkit-scrollbar-thumb {
+  @apply bg-primary rounded-full;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  @apply bg-primary;
+}
+
+/* Smooth transitions for all interactive elements */
+* {
+  transition-property: color, background-color, border-color, text-decoration-color, fill, stroke, opacity, box-shadow, transform, filter, backdrop-filter;
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  transition-duration: 180ms;
+}
+
+@keyframes breathing {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.2); }
+  100% { transform: scale(1); }
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-12px); }
+} 

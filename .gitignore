@@ -1,0 +1,42 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.sqlite3
+.DS_Store
+*.egg-info/
+
+# VSCode
+.vscode/
+
+# macOS
+.DS_Store
+
+# Node.js
+node_modules/
+frontend/node_modules/
+frontend/build/
+frontend/dist/
+frontend/.next/
+frontend/.cache/
+
+# Logs
+*.log
+
+# OS generated files
+Thumbs.db
+
+# Archives
+*.zip
+*.tar.gz
+*.tar
+*.rar
+
+# Jupyter
+.ipynb_checkpoints/
+
+# Test output
+htmlcov/
+coverage.xml
+*.cover
