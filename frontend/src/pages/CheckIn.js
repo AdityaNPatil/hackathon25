@@ -18,14 +18,18 @@ const CheckIn = () => {
   const handleSubmit = async () => {
     if (!selectedMood) return;
     const data = await checkIn(selectedMood.label, notes);
-    if (data) {
-      // Optionally, show a contextual AI response
-      if (selectedMood.id === 'Happy 😊') setAiResponse("That's wonderful! Keep spreading joy!");
-      if (selectedMood.id === 'Neutral 😐') setAiResponse("It's okay to feel neutral. Try a quick stretch or deep breath!");
-      if (selectedMood.id === 'Stressed 😰') setAiResponse("I hear you. Try a breathing exercise or a short walk. You've got this!");
-      setSelectedMood(null);
-      setNotes('');
-    }
+  
+    // Fallback logic
+    let fallbackResponse = "";
+    if (selectedMood.id === 'Happy 😊') fallbackResponse = "That's wonderful! Keep spreading joy!";
+    else if (selectedMood.id === 'Neutral 😐') fallbackResponse = "It's okay to feel neutral. Try a quick stretch or deep breath!";
+    else if (selectedMood.id === 'Stressed 😰') fallbackResponse = "I hear you. Try a breathing exercise or a short walk. You've got this!";
+  
+    // Use AI response if available, else fallback
+    setAiResponse(data?.ai_response || fallbackResponse);
+  
+    setSelectedMood(null);
+    setNotes('');
   };
 
   return (
